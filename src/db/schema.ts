@@ -42,9 +42,14 @@ export const items = pgTable(
 
     location: itemLocation("location").notNull(),
 
-    // The image lives in R2; we store only its object key here.
-    // Nullable so you can create an item before the upload finishes.
+    // The full image lives in R2; we store only its object key here.
+    // Nullable so an item can exist without a photo.
     imageKey: text("image_key"),
+
+    // The ~400px thumbnail's R2 key. Generated once on upload (sharp) and
+    // stored separately so list views can serve the small image directly
+    // rather than resizing the full one on every render.
+    thumbKey: text("thumb_key"),
 
     // The external page where this item is listed online. A separate
     // concern from the image — this is just a URL, distinct from the

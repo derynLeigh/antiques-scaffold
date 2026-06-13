@@ -1,39 +1,63 @@
 import NextAuth from "next-auth";
-import Resend from "next-auth/providers/resend";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 
 /**
- * Auth.js (NextAuth v5) configuration.
+ * Auth.js (NextAuth v5) — single-user credentials configuration.
  *
- * Magic-link strategy: the single user receives a sign-in link by email,
- * so there's no password to store or hash anywhere. This is the cleanest
- * fit for a single-user app on serverless — no password reset flow, no
- * credential table.
+ * Why credentials over magic-link: for exactly one user, a single hashed
+ * password is the leanest secure option. It needs no database adapter and
+ * no extra tables — sessions stay as stateless signed JWT cookies, which
+ * suits Vercel's serverless model (no per-request session lookup).
  *
- * Session strategy is JWT (the default when there's no database adapter),
- * which means sessions live in a signed cookie rather than a DB table.
- * On Vercel's serverless model that avoids a per-request session lookup.
+ * The password is never stored in plaintext anywhere. We store a bcrypt
+ * HASH in the AUTH_PASSWORD_HASH env var and compare against it. The hash
+ * is useless to an attacker who reads the env — they still can't derive
+ * the password from it.
  *
- * ALLOWED_EMAIL gates sign-in to you alone: even though magic-link would
- * technically email a link to anyone who enters an address, the signIn
- * callback rejects every address except yours. That's what makes a
- * public-internet login page safe for a single-user system.
+ * The "user" here is a single fixed identity. There's no users table to
+ * look anything up in; identity is defined entirely by knowing the one
+ * password. authorize() returns null on any failure so Auth.js shows the
+ * login page's error state rather than throwing.
  */
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [
-    Resend({
-      apiKey: process.env.AUTH_RESEND_KEY,
-      from: process.env.AUTH_EMAIL_FROM,
-    }),
-  ],
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
+    error: "/login",
   },
+  providers: [
+    Credentials({
+      credentials: {
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const password = credentials?.password as string | undefined;
+        const hash = process.env.AUTH_PASSWORD_HASH;
+
+        if (!password || !hash) return null;
+
+        const ok = await bcrypt.compare(password, hash);
+        if (!ok) return null;
+
+        // Any object returned becomes the signed-in user. Single fixed
+        // identity — no database row, just a stable id/name.
+        return { id: "owner", name: "Owner" };
+      },
+    }),
+  ],
   callbacks: {
-    // Hard allow-list: only the owner's email may sign in.
-    async signIn({ user }) {
-      const allowed = process.env.ALLOWED_EMAIL?.toLowerCase();
-      return user.email?.toLowerCase() === allowed;
+    // Credentials sessions need identity carried explicitly into the JWT,
+    // then out to the session object — otherwise session.user is empty.
+    async jwt({ token, user }) {
+      if (user) token.id = user.id;
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token.id) {
+        session.user.id = token.id as string;
+      }
+      return session;
     },
   },
 });

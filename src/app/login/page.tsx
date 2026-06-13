@@ -1,34 +1,48 @@
 import { signIn } from "@/auth";
 
 /**
- * Login page. A single email field that triggers the magic-link flow.
- * The server action calls signIn("resend", ...) which emails the link;
- * clicking it completes sign-in and the middleware then lets you through.
+ * Login page — single password field.
  *
- * Note: no <form> validation theatre here — Auth.js + the ALLOWED_EMAIL
- * allow-list do the real work. Anyone can type an address, but only the
- * owner's address actually receives a working link.
+ * The server action calls signIn("credentials", ...) which runs the
+ * authorize() function in auth.ts. On success the user is redirected to
+ * /inventory; on failure Auth.js redirects back to /login (the error
+ * page we configured), so a wrong password simply returns here.
+ *
+ * redirectTo is handled by signIn. We don't surface a detailed error
+ * message on purpose — "wrong password" with no username to enumerate
+ * gives an attacker nothing useful.
  */
-export default function LoginPage() {
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: { error?: string };
+}) {
+  const hasError = Boolean(searchParams?.error);
+
   return (
     <main style={{ maxWidth: 360, margin: "8rem auto", padding: "0 1rem" }}>
       <h1>Sign in</h1>
       <p style={{ color: "#666", fontSize: 14 }}>
-        Enter your email and we&apos;ll send you a sign-in link.
+        Enter your password to access the inventory.
       </p>
+      {hasError && (
+        <p style={{ color: "#c00", fontSize: 14 }}>
+          Incorrect password. Please try again.
+        </p>
+      )}
       <form
         action={async (formData) => {
           "use server";
-          await signIn("resend", {
-            email: formData.get("email") as string,
+          await signIn("credentials", {
+            password: formData.get("password") as string,
             redirectTo: "/inventory",
           });
         }}
       >
         <input
-          type="email"
-          name="email"
-          placeholder="you@example.com"
+          type="password"
+          name="password"
+          placeholder="Password"
           required
           style={{
             width: "100%",
@@ -51,7 +65,7 @@ export default function LoginPage() {
             cursor: "pointer",
           }}
         >
-          Send sign-in link
+          Sign in
         </button>
       </form>
     </main>

@@ -1,35 +1,176 @@
+import Link from "next/link";
+import { desc } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { items } from "@/db/schema";
-import { sql } from "drizzle-orm";
+import { publicUrl } from "@/lib/r2";
+import {
+  formatPrice,
+  statusLabel,
+  locationLabel,
+  formatDate,
+} from "@/lib/format";
 
 /**
- * The first page behind the gate. For Phase 0 it just proves three things
- * are wired together: the session (you only see this if signed in), the
- * database (it counts rows), and the schema (the import resolves).
+ * Inventory list — the real read view (replaces the Phase 0 stub).
  *
- * In Phase 3 this becomes the real inventory list. For now it's the
- * "hello, the stack holds together" page — the end of your first thin
- * vertical slice.
+ * This is a React Server Component: the await db.query runs on the
+ * server, so the database query never reaches the browser and there's no
+ * client-side fetching boilerplate. The page renders with data already
+ * in place.
+ *
+ * Ordering: newest first (created_at desc), which hits the
+ * idx_items_created_at index we defined in the schema.
  */
 export default async function InventoryPage() {
   const session = await auth();
 
-  // Cheap query that confirms the Neon connection and schema are live.
-  const [{ count }] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(items);
+  const allItems = await db
+    .select()
+    .from(items)
+    .orderBy(desc(items.createdAt));
 
   return (
-    <main style={{ maxWidth: 720, margin: "4rem auto", padding: "0 1rem" }}>
-      <h1>Inventory</h1>
-      <p style={{ color: "#666" }}>
-        Signed in as {session?.user?.email}. Items in database: {count}.
-      </p>
-      <p style={{ color: "#999", fontSize: 14, marginTop: "2rem" }}>
-        This stub confirms auth, the database connection, and the schema
-        are all wired together. The real item list arrives in Phase 3.
-      </p>
+    <main style={{ maxWidth: 960, margin: "3rem auto", padding: "0 1rem" }}>
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <div>
+          <h1 style={{ margin: 0 }}>Inventory</h1>
+          <p style={{ margin: "0.25rem 0 0", color: "#666", fontSize: 14 }}>
+            {allItems.length} item{allItems.length === 1 ? "" : "s"}
+            {session?.user?.name ? ` · ${session.user.name}` : ""}
+          </p>
+        </div>
+        <Link
+          href="/inventory/new"
+          style={{
+            padding: "0.55rem 1rem",
+            background: "#111",
+            color: "#fff",
+            borderRadius: 6,
+            textDecoration: "none",
+            fontSize: 14,
+          }}
+        >
+          + Add item
+        </Link>
+      </header>
+
+      {allItems.length === 0 ? (
+        <p style={{ color: "#666" }}>
+          No items yet.{" "}
+          <Link href="/inventory/new">Add your first one</Link>.
+        </p>
+      ) : (
+        <ul
+          style={{
+            listStyle: "none",
+            padding: 0,
+            margin: 0,
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+            gap: "1rem",
+          }}
+        >
+          {allItems.map((item) => (
+            <li
+              key={item.id}
+              style={{
+                border: "1px solid #e5e5e5",
+                borderRadius: 8,
+                overflow: "hidden",
+                background: "#fff",
+              }}
+            >
+              <Link
+                href={`/inventory/${item.id}`}
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                <div
+                  style={{
+                    aspectRatio: "4 / 3",
+                    background: "#f3f3f3",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {item.thumbKey ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={publicUrl(item.thumbKey)}
+                      alt={item.description}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <span style={{ color: "#bbb", fontSize: 13 }}>
+                      No photo
+                    </span>
+                  )}
+                </div>
+                <div style={{ padding: "0.75rem" }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontWeight: 600,
+                      fontSize: 14,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {item.description}
+                  </p>
+                  <p style={{ margin: "0.4rem 0 0", fontSize: 14 }}>
+                    {formatPrice(item.pricePence)}
+                  </p>
+                  <p
+                    style={{
+                      margin: "0.4rem 0 0",
+                      fontSize: 12,
+                      color: "#666",
+                      display: "flex",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <span
+                      style={{
+                        padding: "0.1rem 0.4rem",
+                        borderRadius: 4,
+                        background:
+                          item.status === "sold" ? "#fde2e2" : "#e2f0e2",
+                        color: item.status === "sold" ? "#a11" : "#161",
+                      }}
+                    >
+                      {statusLabel(item.status)}
+                    </span>
+                    <span>{locationLabel(item.location)}</span>
+                  </p>
+                  <p
+                    style={{
+                      margin: "0.4rem 0 0",
+                      fontSize: 12,
+                      color: "#999",
+                    }}
+                  >
+                    Added {formatDate(item.createdAt)}
+                  </p>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }
