@@ -15,6 +15,20 @@
       "when": 1781367176950,
       "tag": "0001_parallel_colossus",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781452086464,
+      "tag": "0002_faulty_echo",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781469135796,
+      "tag": "0003_boring_blur",
+      "breakpoints": true
     }
   ]
 }

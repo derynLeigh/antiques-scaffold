@@ -39,6 +39,9 @@ export async function createItem(formData: FormData): Promise<void> {
   const status = formData.get("status") as string;
   const location = formData.get("location") as string;
   const listingUrl = (formData.get("listingUrl") as string)?.trim() || null;
+  const condition = (formData.get("condition") as string)?.trim() || null;
+  const dimensions = (formData.get("dimensions") as string)?.trim() || null;
+  const costPounds = formData.get("cost") as string;
   const image = formData.get("image") as File | null;
 
   // --- Validation: fail loudly rather than writing bad data ---
@@ -50,6 +53,13 @@ export async function createItem(formData: FormData): Promise<void> {
     throw new Error("Price must be a non-negative number");
   }
   const pricePence = Math.round(pounds * 100);
+
+  // Cost: same pounds → pennies conversion. Required (always known).
+  const cost = Number(costPounds);
+  if (!Number.isFinite(cost) || cost < 0) {
+    throw new Error("Cost must be a non-negative number");
+  }
+  const costPence = Math.round(cost * 100);
 
   if (status !== "for_sale" && status !== "sold") {
     throw new Error("Invalid status");
@@ -110,12 +120,14 @@ export async function createItem(formData: FormData): Promise<void> {
 
   await db.insert(items).values({
     description,
+    condition,
+    dimensions,
     pricePence,
+    costPence,
     status,
     location,
     listingUrl,
     imageKey,
-    // thumbKey isn't a column yet — see note. Stored via imageKey pairing.
     thumbKey,
   });
 

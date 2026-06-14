@@ -1,23 +1,49 @@
+import { AuthError } from "next-auth";
+import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
 
 /**
  * Login page — single password field.
  *
- * The server action calls signIn("credentials", ...) which runs the
- * authorize() function in auth.ts. On success the user is redirected to
- * /inventory; on failure Auth.js redirects back to /login (the error
- * page we configured), so a wrong password simply returns here.
+ * Error handling, the important part:
  *
- * redirectTo is handled by signIn. We don't surface a detailed error
- * message on purpose — "wrong password" with no username to enumerate
- * gives an attacker nothing useful.
+ * signIn() throws in BOTH outcomes. On success it throws a Next redirect
+ * (that's how server actions redirect); on a bad password it throws an
+ * AuthError (CredentialsSignin, because authorize() returned null).
+ *
+ * So the catch must distinguish them: an AuthError means "wrong password"
+ * → redirect back to /login?error=1 to show the message. ANY other thrown
+ * value (notably the success redirect) must be re-thrown untouched, or
+ * we'd accidentally swallow the redirect and login would appear to do
+ * nothing. This is the canonical Auth.js v5 + server-action pattern.
+ *
+ * In Next 16, searchParams is async (a Promise) — same change as route
+ * params — so we await it before reading ?error.
  */
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: Promise<{ error?: string }>;
 }) {
-  const hasError = Boolean(searchParams?.error);
+  const { error } = await searchParams;
+  const hasError = Boolean(error);
+
+  async function authenticate(formData: FormData) {
+    "use server";
+    try {
+      await signIn("credentials", {
+        password: formData.get("password") as string,
+        redirectTo: "/inventory",
+      });
+    } catch (err) {
+      // Wrong password: show the inline error.
+      if (err instanceof AuthError) {
+        redirect("/login?error=1");
+      }
+      // Anything else (including the success redirect) must propagate.
+      throw err;
+    }
+  }
 
   return (
     <main style={{ maxWidth: 360, margin: "8rem auto", padding: "0 1rem" }}>
@@ -30,15 +56,7 @@ export default function LoginPage({
           Incorrect password. Please try again.
         </p>
       )}
-      <form
-        action={async (formData) => {
-          "use server";
-          await signIn("credentials", {
-            password: formData.get("password") as string,
-            redirectTo: "/inventory",
-          });
-        }}
-      >
+      <form action={authenticate}>
         <input
           type="password"
           name="password"

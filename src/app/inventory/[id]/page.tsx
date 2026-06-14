@@ -73,6 +73,23 @@ export default async function ItemDetailPage({
         <dt style={{ color: "#666" }}>Price</dt>
         <dd style={{ margin: 0 }}>{formatPrice(item.pricePence)}</dd>
 
+        <dt style={{ color: "#666" }}>Cost</dt>
+        <dd style={{ margin: 0 }}>{formatPrice(item.costPence)}</dd>
+
+        {item.condition && (
+          <>
+            <dt style={{ color: "#666" }}>Condition</dt>
+            <dd style={{ margin: 0 }}>{item.condition}</dd>
+          </>
+        )}
+
+        {item.dimensions && (
+          <>
+            <dt style={{ color: "#666" }}>Dimensions</dt>
+            <dd style={{ margin: 0 }}>{item.dimensions}</dd>
+          </>
+        )}
+
         <dt style={{ color: "#666" }}>Status</dt>
         <dd style={{ margin: 0 }}>{statusLabel(item.status)}</dd>
 

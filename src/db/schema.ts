@@ -33,10 +33,25 @@ export const items = pgTable(
 
     description: text("description").notNull(),
 
+    // Free-text condition description (e.g. "chip to rim, light foxing").
+    // Nullable: condition notes are often added after the item is logged.
+    condition: text("condition"),
+
+    // Free-text dimensions (e.g. "H 42cm × W 30cm"). Free text because
+    // antique measurements are irregular and don't fit a fixed structure.
+    dimensions: text("dimensions"),
+
     // Price stored as an INTEGER number of pennies, never a float.
     // £42.50 is stored as 4250. This avoids floating-point rounding
     // errors entirely — you format to pounds only at display time.
     pricePence: integer("price_pence").notNull(),
+
+    // What you paid for the item, in integer pennies — mirrors pricePence
+    // so margin (price − cost) is clean integer arithmetic. NOT NULL since
+    // cost is always known; defaults to 0 so the migration can apply to any
+    // existing rows. COMMERCIALLY SENSITIVE: this is your margin — it must
+    // never be exposed in the public-facing SPA (Phase 6).
+    costPence: integer("cost_pence").notNull().default(0),
 
     status: itemStatus("status").notNull().default("for_sale"),
 
@@ -78,6 +93,9 @@ export const items = pgTable(
     // A non-negative price is a data-integrity invariant, so it belongs
     // in the schema rather than being trusted to app code.
     check("price_non_negative", sql`${table.pricePence} >= 0`),
+
+    // Same invariant for cost.
+    check("cost_non_negative", sql`${table.costPence} >= 0`),
   ]
 );
 

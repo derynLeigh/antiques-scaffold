@@ -51,6 +51,39 @@ export default function NewItemPage() {
         </label>
 
         <label style={label}>
+          Cost (£)
+          <input
+            type="number"
+            name="cost"
+            step="0.01"
+            min="0"
+            required
+            placeholder="20.00"
+            style={field}
+          />
+        </label>
+
+        <label style={label}>
+          Condition (optional)
+          <textarea
+            name="condition"
+            rows={2}
+            placeholder="e.g. chip to rim, light foxing"
+            style={field}
+          />
+        </label>
+
+        <label style={label}>
+          Dimensions (optional)
+          <input
+            type="text"
+            name="dimensions"
+            placeholder="e.g. H 42cm × W 30cm"
+            style={field}
+          />
+        </label>
+
+        <label style={label}>
           Status
           <select name="status" defaultValue="for_sale" style={field}>
             <option value="for_sale">For sale</option>
