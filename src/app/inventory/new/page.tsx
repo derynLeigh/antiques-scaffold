@@ -31,7 +31,7 @@ export default function NewItemPage() {
   return (
     <main style={{ maxWidth: 520, margin: "3rem auto", padding: "0 1rem" }}>
       <h1>Add item</h1>
-      <form action={createItem} encType="multipart/form-data">
+      <form action={createItem}>
         <label style={label}>
           Description
           <textarea name="description" required rows={3} style={field} />

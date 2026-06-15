@@ -49,16 +49,42 @@ export default async function ItemDetailPage({
 
       {item.imageKey && (
         <div style={{ margin: "1rem 0" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={publicUrl(item.imageKey)}
-            alt={item.description}
-            style={{
-              maxWidth: "100%",
-              borderRadius: 8,
-              border: "1px solid #e5e5e5",
-            }}
-          />
+          {/* When a marketplace listing URL exists, the image links to it
+              (new tab). Otherwise it's a plain image. The cursor/title
+              hint only applies in the linked case. */}
+          {item.listingUrl ? (
+            <a
+              href={item.listingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="View this item's online listing"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={publicUrl(item.imageKey)}
+                alt={item.description}
+                style={{
+                  maxWidth: "100%",
+                  borderRadius: 8,
+                  border: "1px solid #e5e5e5",
+                  cursor: "pointer",
+                }}
+              />
+            </a>
+          ) : (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={publicUrl(item.imageKey)}
+                alt={item.description}
+                style={{
+                  maxWidth: "100%",
+                  borderRadius: 8,
+                  border: "1px solid #e5e5e5",
+                }}
+              />
+            </>
+          )}
         </div>
       )}
 
