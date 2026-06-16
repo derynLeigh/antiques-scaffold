@@ -1,22 +1,31 @@
-import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { jwtVerify } from "jose";
 
 /**
- * The gate. Every request passes through here; unauthenticated requests
- * to protected paths get bounced to /login.
+ * The gate (Next 16 proxy convention). Every request passes through here;
+ * unauthenticated requests to protected paths get bounced to /login.
  *
- * The principle: deny by default. Rather than listing what to protect
- * (easy to forget a new route), we protect everything and explicitly
- * allow-list the handful of public paths. When you add the public SPA
- * in Phase 6, you'll extend PUBLIC_PREFIXES — until then, the whole app
- * is private behind this one check.
+ * Why this verifies the cookie directly rather than calling getSession():
+ * middleware runs in the Edge runtime, which can't use next/headers'
+ * cookies() the same way and can't run bcryptjs. But jose IS
+ * Edge-compatible, so we read the cookie off the request and verify the
+ * JWT signature here. No bcrypt needed at this layer — the password was
+ * already checked at login; the proxy only checks "is there a valid
+ * signed session".
+ *
+ * Deny by default: protect everything, allow-list only /login. (The old
+ * /api/auth allow-list is gone — there's no NextAuth route handler now.)
  */
 
-// Paths reachable without a session. Auth.js's own routes live under
-// /api/auth and must stay open so the magic-link flow can complete.
-const PUBLIC_PREFIXES = ["/login", "/api/auth"];
+const PUBLIC_PREFIXES = ["/login"];
 
-export default auth((req) => {
+function secretKey(): Uint8Array {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) throw new Error("AUTH_SECRET is not set");
+  return new TextEncoder().encode(secret);
+}
+
+export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const isPublic = PUBLIC_PREFIXES.some(
@@ -24,17 +33,23 @@ export default auth((req) => {
   );
   if (isPublic) return NextResponse.next();
 
-  // req.auth is populated by the auth() wrapper. No session -> redirect.
-  if (!req.auth) {
-    const loginUrl = new URL("/login", req.nextUrl.origin);
-    return NextResponse.redirect(loginUrl);
+  const token = req.cookies.get("session")?.value;
+
+  if (token) {
+    try {
+      await jwtVerify(token, secretKey());
+      return NextResponse.next(); // valid session — allow
+    } catch {
+      // fall through to redirect on invalid/expired token
+    }
   }
 
-  return NextResponse.next();
-});
+  const loginUrl = new URL("/login", req.nextUrl.origin);
+  return NextResponse.redirect(loginUrl);
+}
 
 // Matcher excludes static assets and image optimisation so the gate only
-// runs on real page/API requests — keeps the middleware cheap.
+// runs on real page/API requests — keeps the proxy cheap.
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

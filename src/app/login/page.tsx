@@ -1,24 +1,20 @@
-import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
-import { signIn } from "@/auth";
+import { verifyPassword, createSession } from "@/auth";
 
 /**
  * Login page — single password field.
  *
- * Error handling, the important part:
+ * The server action verifies the password against the stored hash and, on
+ * success, issues the signed session cookie then redirects to /inventory.
+ * On failure it redirects back with ?error=1 to show the message.
  *
- * signIn() throws in BOTH outcomes. On success it throws a Next redirect
- * (that's how server actions redirect); on a bad password it throws an
- * AuthError (CredentialsSignin, because authorize() returned null).
+ * Cleaner than the NextAuth version: no AuthError dance, no distinguishing
+ * a thrown redirect from a thrown auth error. We control the whole flow —
+ * verify, set cookie, redirect — so it reads top to bottom.
  *
- * So the catch must distinguish them: an AuthError means "wrong password"
- * → redirect back to /login?error=1 to show the message. ANY other thrown
- * value (notably the success redirect) must be re-thrown untouched, or
- * we'd accidentally swallow the redirect and login would appear to do
- * nothing. This is the canonical Auth.js v5 + server-action pattern.
- *
- * In Next 16, searchParams is async (a Promise) — same change as route
- * params — so we await it before reading ?error.
+ * Note redirect() must be called OUTSIDE the try/catch: it works by
+ * throwing a special signal Next catches, so wrapping it would swallow
+ * that signal. We verify inside the guard, then redirect after.
  */
 export default async function LoginPage({
   searchParams,
@@ -30,19 +26,13 @@ export default async function LoginPage({
 
   async function authenticate(formData: FormData) {
     "use server";
-    try {
-      await signIn("credentials", {
-        password: formData.get("password") as string,
-        redirectTo: "/inventory",
-      });
-    } catch (err) {
-      // Wrong password: show the inline error.
-      if (err instanceof AuthError) {
-        redirect("/login?error=1");
-      }
-      // Anything else (including the success redirect) must propagate.
-      throw err;
+    const password = formData.get("password") as string;
+    const ok = await verifyPassword(password);
+    if (!ok) {
+      redirect("/login?error=1");
     }
+    await createSession();
+    redirect("/inventory");
   }
 
   return (
