@@ -29,7 +29,7 @@ import { r2, R2_BUCKET } from "@/lib/r2";
  * gated page.
  */
 
-const MAX_BYTES = 8 * 1024 * 1024; // 8 MB ceiling on the source image
+const MAX_BYTES = 5 * 1024 * 1024; // 5 MB — matches serverActions.bodySizeLimit
 
 export async function createItem(formData: FormData): Promise<void> {
   const session = await auth();

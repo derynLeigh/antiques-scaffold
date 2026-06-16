@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import { db } from "@/db";
 import { items } from "@/db/schema";
 import { publicUrl } from "@/lib/r2";
+import { parseItemFilters, buildItemWhere } from "@/lib/item-filters";
+import { FilterBar } from "./FilterBar";
 import {
   formatPrice,
   statusLabel,
@@ -22,12 +24,27 @@ import {
  * Ordering: newest first (created_at desc), which hits the
  * idx_items_created_at index we defined in the schema.
  */
-export default async function InventoryPage() {
+export default async function InventoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    q?: string;
+    minPrice?: string;
+    maxPrice?: string;
+    from?: string;
+    to?: string;
+  }>;
+}) {
   const session = await auth();
+
+  const sp = await searchParams;
+  const filters = parseItemFilters(sp);
+  const where = buildItemWhere(filters);
 
   const allItems = await db
     .select()
     .from(items)
+    .where(where)
     .orderBy(desc(items.createdAt));
 
   return (
@@ -62,10 +79,21 @@ export default async function InventoryPage() {
         </Link>
       </header>
 
+      <FilterBar current={sp} />
+
       {allItems.length === 0 ? (
         <p style={{ color: "#666" }}>
-          No items yet.{" "}
-          <Link href="/inventory/new">Add your first one</Link>.
+          {filters.q || filters.minPence !== undefined || filters.maxPence !== undefined || filters.from || filters.to ? (
+            <>
+              No items match these filters.{" "}
+              <Link href="/inventory">Clear filters</Link>.
+            </>
+          ) : (
+            <>
+              No items yet.{" "}
+              <Link href="/inventory/new">Add your first one</Link>.
+            </>
+          )}
         </p>
       ) : (
         <ul
