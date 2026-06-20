@@ -55,7 +55,7 @@ export async function createItem(formData: FormData): Promise<void> {
   });
 
   revalidatePath("/inventory");
-  redirect("/inventory");
+  redirect("/inventory?saved=added");
 }
 
 async function processAndUploadImage(image: File): Promise<{ imageKey: string; thumbKey: string }> {
@@ -127,7 +127,7 @@ export async function updateItem(id: number, formData: FormData): Promise<void> 
 
   revalidatePath("/inventory");
   revalidatePath(`/inventory/${id}`);
-  redirect(`/inventory/${id}`);
+  redirect("/inventory?saved=updated");
 }
 
 export async function deleteItem(id: number): Promise<void> {

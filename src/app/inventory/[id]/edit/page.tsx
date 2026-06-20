@@ -19,8 +19,8 @@ export default async function EditItemPage({ params }: { params: Promise<{ id: s
 
   return (
     <main className="mx-auto max-w-xl px-5 py-12">
-      <Link href={`/inventory/${item.id}`} className="text-sm text-accent underline underline-offset-2">
-        ← Back to item
+      <Link href="/inventory" className="text-sm text-accent underline underline-offset-2">
+        ← Back to inventory
       </Link>
       <h1 className="mt-4 text-2xl font-semibold tracking-tight text-ink">Edit item</h1>
 
