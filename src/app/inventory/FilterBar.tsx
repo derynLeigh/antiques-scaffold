@@ -1,40 +1,21 @@
 import Link from "next/link";
 
 /**
- * Filter bar — a GET form. Submitting navigates to /inventory with the
- * fields as query params (?q=…&minPrice=…), which the page reads and
- * applies. Using method="get" (not a server action) is deliberate: it
- * makes filters live in the URL, so they're shareable, bookmarkable, and
- * survive a refresh — and it needs zero client JS.
- *
- * defaultValue echoes the current filters back so the form stays
- * populated after submitting. A "Clear" link resets by linking to the
- * bare /inventory path.
+ * Filter bar — a GET form (filters live in the URL, shareable, no client
+ * JS). Now Tailwind-styled with larger, higher-contrast inputs: the
+ * search/keyword field is the prominent one, using the dedicated
+ * --color-search-* tokens and a bigger size so it reads as the primary
+ * way to find stock.
  */
 export function FilterBar({
   current,
 }: {
-  current: {
-    q?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    from?: string;
-    to?: string;
-  };
+  current: { q?: string; minPrice?: string; maxPrice?: string; from?: string; to?: string };
 }) {
-  const field: React.CSSProperties = {
-    padding: "0.45rem",
-    border: "1px solid #ccc",
-    borderRadius: 6,
-    fontSize: 14,
-  };
-  const labelStyle: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.2rem",
-    fontSize: 12,
-    color: "#666",
-  };
+  const inputBase =
+    "rounded-lg border bg-search-bg border-search-border text-ink placeholder:text-faint " +
+    "focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-colors";
+  const labelBase = "flex flex-col gap-1 text-xs font-medium text-muted";
 
   const hasFilters =
     current.q || current.minPrice || current.maxPrice || current.from || current.to;
@@ -42,30 +23,20 @@ export function FilterBar({
   return (
     <form
       method="get"
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: "0.75rem",
-        alignItems: "flex-end",
-        padding: "1rem",
-        background: "#fafafa",
-        border: "1px solid #eee",
-        borderRadius: 8,
-        marginBottom: "1.5rem",
-      }}
+      className="mb-8 flex flex-wrap items-end gap-4 rounded-xl border border-line bg-surface p-5"
     >
-      <label style={{ ...labelStyle, flex: "1 1 200px" }}>
-        Keyword
+      <label className={`${labelBase} flex-1 min-w-[260px]`}>
+        Search
         <input
           type="text"
           name="q"
           defaultValue={current.q ?? ""}
-          placeholder="description or condition"
-          style={field}
+          placeholder="Search by description or condition…"
+          className={`${inputBase} px-4 py-3 text-base`}
         />
       </label>
 
-      <label style={labelStyle}>
+      <label className={labelBase}>
         Min £
         <input
           type="number"
@@ -73,11 +44,11 @@ export function FilterBar({
           step="0.01"
           min="0"
           defaultValue={current.minPrice ?? ""}
-          style={{ ...field, width: 90 }}
+          className={`${inputBase} w-24 px-3 py-2.5 text-sm`}
         />
       </label>
 
-      <label style={labelStyle}>
+      <label className={labelBase}>
         Max £
         <input
           type="number"
@@ -85,50 +56,39 @@ export function FilterBar({
           step="0.01"
           min="0"
           defaultValue={current.maxPrice ?? ""}
-          style={{ ...field, width: 90 }}
+          className={`${inputBase} w-24 px-3 py-2.5 text-sm`}
         />
       </label>
 
-      <label style={labelStyle}>
+      <label className={labelBase}>
         Added from
         <input
           type="date"
           name="from"
           defaultValue={current.from ?? ""}
-          style={field}
+          className={`${inputBase} px-3 py-2.5 text-sm`}
         />
       </label>
 
-      <label style={labelStyle}>
+      <label className={labelBase}>
         Added to
         <input
           type="date"
           name="to"
           defaultValue={current.to ?? ""}
-          style={field}
+          className={`${inputBase} px-3 py-2.5 text-sm`}
         />
       </label>
 
       <button
         type="submit"
-        style={{
-          padding: "0.5rem 1rem",
-          background: "#111",
-          color: "#fff",
-          border: "none",
-          borderRadius: 6,
-          cursor: "pointer",
-          fontSize: 14,
-        }}
+        className="rounded-lg bg-accent px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
       >
         Filter
       </button>
 
       {hasFilters && (
-        <Link
-          href="/inventory"
-          style={{ fontSize: 13, color: "#666", alignSelf: "center" }}
-        >
+        <Link href="/inventory" className="self-center text-sm text-muted underline underline-offset-2 hover:text-ink">
           Clear
         </Link>
       )}
