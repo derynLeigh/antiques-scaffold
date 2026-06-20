@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-paper: #faf9f7;
+  --color-surface: #ffffff;
+  --color-ink: #1c1a17;
+  --color-muted: #6b6660;
+  --color-faint: #9a948c;
+  --color-line: #e7e3dd;
+  --color-line-strong: #d4cfc7;
+
+  --color-accent: #2d3a34;
+  --color-accent-hover: #3d4d45;
+
+  --color-sale-bg: #e8f0ea;
+  --color-sale-text: #2f5f43;
+  --color-sold-bg: #f3e8e6;
+  --color-sold-text: #8a4038;
+
+  --color-search-bg: #ffffff;
+  --color-search-border: #c8c2b8;
+
+  --text-xs: 0.78rem;
+  --text-sm: 0.9rem;
+  --text-base: 1.02rem;
+  --text-lg: 1.2rem;
+  --text-xl: 1.55rem;
+  --text-2xl: 2.1rem;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.dark {
+  --color-paper: #1a1816;
+  --color-surface: #242120;
+  --color-ink: #f0ece6;
+  --color-muted: #aaa39a;
+  --color-faint: #7a746b;
+  --color-line: #36322e;
+  --color-line-strong: #48433d;
+
+  --color-accent: #6e8a7a;
+  --color-accent-hover: #82a08e;
+
+  --color-sale-bg: #1f3328;
+  --color-sale-text: #8fc7a4;
+  --color-sold-bg: #3a2522;
+  --color-sold-text: #d49a92;
+
+  --color-search-bg: #2d2a28;
+  --color-search-border: #55504a;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-size: var(--text-base);
+}
+
+body, body * {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}

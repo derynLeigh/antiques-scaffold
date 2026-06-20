@@ -1,21 +1,6 @@
 import { redirect } from "next/navigation";
 import { verifyPassword, createSession } from "@/auth";
 
-/**
- * Login page — single password field.
- *
- * The server action verifies the password against the stored hash and, on
- * success, issues the signed session cookie then redirects to /inventory.
- * On failure it redirects back with ?error=1 to show the message.
- *
- * Cleaner than the NextAuth version: no AuthError dance, no distinguishing
- * a thrown redirect from a thrown auth error. We control the whole flow —
- * verify, set cookie, redirect — so it reads top to bottom.
- *
- * Note redirect() must be called OUTSIDE the try/catch: it works by
- * throwing a special signal Next catches, so wrapping it would swallow
- * that signal. We verify inside the guard, then redirect after.
- */
 export default async function LoginPage({
   searchParams,
 }: {
@@ -36,42 +21,25 @@ export default async function LoginPage({
   }
 
   return (
-    <main style={{ maxWidth: 360, margin: "8rem auto", padding: "0 1rem" }}>
-      <h1>Sign in</h1>
-      <p style={{ color: "#666", fontSize: 14 }}>
+    <main className="mx-auto mt-32 max-w-sm px-5">
+      <h1 className="text-2xl font-semibold tracking-tight text-ink">Sign in</h1>
+      <p className="mt-1 text-sm text-muted">
         Enter your password to access the inventory.
       </p>
       {hasError && (
-        <p style={{ color: "#c00", fontSize: 14 }}>
-          Incorrect password. Please try again.
-        </p>
+        <p className="mt-3 text-sm text-sold-text">Incorrect password. Please try again.</p>
       )}
-      <form action={authenticate}>
+      <form action={authenticate} className="mt-5">
         <input
           type="password"
           name="password"
           placeholder="Password"
           required
-          style={{
-            width: "100%",
-            padding: "0.6rem",
-            marginTop: "1rem",
-            border: "1px solid #ccc",
-            borderRadius: 6,
-          }}
+          className="w-full rounded-lg border border-search-border bg-search-bg px-4 py-3 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40"
         />
         <button
           type="submit"
-          style={{
-            width: "100%",
-            padding: "0.6rem",
-            marginTop: "0.75rem",
-            border: "none",
-            borderRadius: 6,
-            background: "#111",
-            color: "#fff",
-            cursor: "pointer",
-          }}
+          className="mt-3 w-full rounded-lg bg-accent px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
         >
           Sign in
         </button>
