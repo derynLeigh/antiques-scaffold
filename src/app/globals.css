@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — Tailwind v4 configures in CSS via @theme, not a JS
+ * config file. These define the project's visual language in one place:
+ * change a value here and it propagates everywhere the token is used.
+ *
+ * Aesthetic: clean / modern / minimal for an antiques business. The
+ * approach is a restrained neutral palette (warm-tinted greys rather
+ * than cold blue-greys, which suits antiques without being "traditional"),
+ * a single understated accent, and a generous type scale so the interface
+ * reads calm and uncluttered. Whitespace does the work, not decoration.
+ */
+@theme {
+  /* Neutral palette — warm-tinted greys (a touch of warmth in the hue
+     keeps it from feeling clinical, fitting for antiques). */
+  --color-paper: #faf9f7; /* page background — soft off-white */
+  --color-surface: #ffffff; /* cards, panels */
+  --color-ink: #1c1a17; /* primary text — near-black, warm */
+  --color-muted: #6b6660; /* secondary text */
+  --color-faint: #9a948c; /* tertiary text, timestamps */
+  --color-line: #e7e3dd; /* borders, dividers */
+  --color-line-strong: #d4cfc7; /* stronger borders */
+
+  /* Single accent — a deep muted green-grey. Used sparingly for primary
+     actions. Understated rather than branded. */
+  --color-accent: #2d3a34;
+  --color-accent-hover: #3d4d45;
+
+  /* Status colours — soft, desaturated so badges don't shout. */
+  --color-sale-bg: #e8f0ea;
+  --color-sale-text: #2f5f43;
+  --color-sold-bg: #f3e8e6;
+  --color-sold-text: #8a4038;
+
+  /* Type scale — slightly larger base than browser default (your
+     font-size bump), with a clear hierarchy. */
+  --text-xs: 0.78rem;
+  --text-sm: 0.9rem;
+  --text-base: 1.02rem;
+  --text-lg: 1.2rem;
+  --text-xl: 1.55rem;
+  --text-2xl: 2.1rem;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+}
+
+/* Base layer — set the page background and default text colour/size so
+   every page inherits the look without repeating classes. */
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-size: var(--text-base);
+}

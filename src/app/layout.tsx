@@ -1,3 +1,5 @@
+import "./globals.css";
+
 export const metadata = {
   title: "Antiques Inventory",
   description: "Stock inventory for the antiques business",
@@ -10,15 +12,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        style={{
-          fontFamily:
-            "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-          margin: 0,
-        }}
-      >
-        {children}
-      </body>
+      <body className="font-sans antialiased">{children}</body>
     </html>
   );
 }
