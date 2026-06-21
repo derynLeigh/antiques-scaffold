@@ -68,7 +68,7 @@ export function ItemGrid({ items }: { items: ItemView[] }) {
               <div className="flex aspect-[4/3] items-center justify-center bg-paper">
                 {item.thumbUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.thumbUrl} alt={item.description} className="h-full w-full object-cover" />
+                  <img src={item.thumbUrl} alt={item.description} className="h-full w-full object-contain" />
                 ) : (
                   <span className="text-sm text-faint">No photo</span>
                 )}
