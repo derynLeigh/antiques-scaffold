@@ -57,8 +57,8 @@ export function ItemFormFields({ item }: { item?: Item }) {
       <label className={label}>
         Location
         <select name="location" defaultValue={item?.location ?? "centre_a"} className={input}>
-          <option value="centre_a">Centre A</option>
-          <option value="centre_b">Centre B</option>
+          <option value="centre_a">Donkey's Years Antiques</option>
+          <option value="centre_b">Morley Antiques Centre</option>
         </select>
       </label>
 

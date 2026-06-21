@@ -11,8 +11,10 @@ import {
   parsePage,
   pageHref,
   PAGE_SIZE,
+  type SearchParams,
 } from "@/lib/item-filters";
-import { FilterBar } from "./FilterBar";
+import { FilterModal } from "./FilterModal";
+import { FilterChips } from "./FilterChips";
 import { signOut } from "./sign-out";
 import { Toast } from "./Toast";
 import { ItemGrid, type ItemView } from "./ItemGrid";
@@ -22,7 +24,7 @@ import { formatPrice, statusLabel, locationLabel, formatDate } from "@/lib/forma
 export default async function InventoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; minPrice?: string; maxPrice?: string; from?: string; to?: string; page?: string; }>;
+  searchParams: Promise<SearchParams>;
 }) {
   const session = await getSession();
 
@@ -54,10 +56,23 @@ export default async function InventoryPage({
 
   const hasFilters =
     filters.q ||
+    filters.status !== undefined ||
+    filters.location !== undefined ||
     filters.minPence !== undefined ||
     filters.maxPence !== undefined ||
     filters.from ||
     filters.to;
+
+  // Count active filters for the button badge.
+  const activeCount = [
+    filters.q,
+    filters.status,
+    filters.location,
+    filters.minPence,
+    filters.maxPence,
+    filters.from,
+    filters.to,
+  ].filter((v) => v !== undefined).length;
 
   // Build view-models for the client grid: pre-compute image URLs (publicUrl
   // is server-only) and convert Dates to millisecond numbers (Dates don't
@@ -93,6 +108,7 @@ export default async function InventoryPage({
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <FilterModal current={sp} activeCount={activeCount} />
           <ThemeToggle />
           <Link
             href="/inventory/new"
@@ -111,7 +127,7 @@ export default async function InventoryPage({
         </div>
       </header>
 
-      <FilterBar current={sp} />
+      <FilterChips current={sp} />
 
       {pageItems.length === 0 ? (
         <p className="mt-10 text-center text-muted">

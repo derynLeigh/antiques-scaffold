@@ -21,8 +21,8 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const LOCATION_LABELS: Record<string, string> = {
-  centre_a: "Centre A",
-  centre_b: "Centre B",
+  centre_a: "Donkey's Years Antiques",
+  centre_b: "Morley Antiques Centre",
 };
 
 export function statusLabel(status: string): string {
