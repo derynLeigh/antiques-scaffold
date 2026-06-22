@@ -51,5 +51,5 @@ export default async function proxy(req: NextRequest) {
 // Matcher excludes static assets and image optimisation so the gate only
 // runs on real page/API requests — keeps the proxy cheap.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon|apple-icon).*)"],
 };

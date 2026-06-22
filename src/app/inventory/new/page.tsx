@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createItem } from "../actions";
-import { ItemFormFields } from "../ItemFormFields";
+import { ItemForm } from "../ItemForm";
 
 export default function NewItemPage() {
   return (
@@ -9,15 +9,7 @@ export default function NewItemPage() {
         ← Back to inventory
       </Link>
       <h1 className="mt-4 text-2xl font-semibold tracking-tight text-ink">Add item</h1>
-      <form action={createItem} className="mt-2">
-        <ItemFormFields />
-        <button
-          type="submit"
-          className="mt-6 rounded-lg bg-accent px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
-        >
-          Save item
-        </button>
-      </form>
+      <ItemForm action={createItem} submitLabel="Save item" />
     </main>
   );
 }

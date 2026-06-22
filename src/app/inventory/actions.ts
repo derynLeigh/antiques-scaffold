@@ -13,45 +13,88 @@ import { r2, R2_BUCKET } from "@/lib/r2";
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB — matches serverActions.bodySizeLimit
 
-export async function createItem(formData: FormData): Promise<void> {
+/**
+ * Form state returned to the client. `error` holds a user-facing validation
+ * message; the form displays it via useActionState. Validation failures
+ * RETURN this (user can fix and resubmit); genuine faults (unauthorised,
+ * not-found, infra) still THROW to the error boundary, since they aren't
+ * user-fixable. On success the action redirects and nothing is returned.
+ */
+export type FormState = { error?: string };
+
+/**
+ * Parse and validate the shared item fields from a form. Returns either a
+ * validated values object or an error message — no throwing for user input,
+ * so create/update can surface a friendly message on the form.
+ */
+function parseItemForm(formData: FormData):
+  | { ok: true; values: {
+      description: string; condition: string | null; dimensions: string | null;
+      pricePence: number; costPence: number;
+      status: "for_sale" | "sold"; location: "centre_a" | "centre_b";
+      listingUrl: string | null;
+    } }
+  | { ok: false; error: string } {
+  const description = (formData.get("description") as string)?.trim();
+  const condition = (formData.get("condition") as string)?.trim() || null;
+  const dimensions = (formData.get("dimensions") as string)?.trim() || null;
+  const listingUrl = (formData.get("listingUrl") as string)?.trim() || null;
+  const status = formData.get("status") as string;
+  const location = formData.get("location") as string;
+
+  if (!description) return { ok: false, error: "Description is required." };
+
+  const pounds = Number(formData.get("price"));
+  if (!Number.isFinite(pounds) || pounds < 0)
+    return { ok: false, error: "Price must be a non-negative number." };
+  const pricePence = Math.round(pounds * 100);
+
+  const cost = Number(formData.get("cost"));
+  if (!Number.isFinite(cost) || cost < 0)
+    return { ok: false, error: "Cost must be a non-negative number." };
+  const costPence = Math.round(cost * 100);
+
+  if (status !== "for_sale" && status !== "sold")
+    return { ok: false, error: "Please choose a valid status." };
+  if (location !== "centre_a" && location !== "centre_b")
+    return { ok: false, error: "Please choose a valid location." };
+
+  if (listingUrl) {
+    try {
+      new URL(listingUrl);
+    } catch {
+      return { ok: false, error: "Listing URL must be a valid URL (including https://)." };
+    }
+  }
+
+  return {
+    ok: true,
+    values: { description, condition, dimensions, pricePence, costPence, status, location, listingUrl },
+  };
+}
+
+export async function createItem(prevState: FormState, formData: FormData): Promise<FormState> {
   const session = await getSession();
   if (!session) throw new Error("Unauthorised");
 
-  const description = (formData.get("description") as string)?.trim();
-  const pricePounds = formData.get("price") as string;
-  const status = formData.get("status") as string;
-  const location = formData.get("location") as string;
-  const listingUrl = (formData.get("listingUrl") as string)?.trim() || null;
-  const condition = (formData.get("condition") as string)?.trim() || null;
-  const dimensions = (formData.get("dimensions") as string)?.trim() || null;
-  const costPounds = formData.get("cost") as string;
+  const parsed = parseItemForm(formData);
+  if (!parsed.ok) return { error: parsed.error };
+  const v = parsed.values;
+
   const image = formData.get("image") as File | null;
-
-  if (!description) throw new Error("Description is required");
-
-  const pounds = Number(pricePounds);
-  if (!Number.isFinite(pounds) || pounds < 0) throw new Error("Price must be a non-negative number");
-  const pricePence = Math.round(pounds * 100);
-
-  const cost = Number(costPounds);
-  if (!Number.isFinite(cost) || cost < 0) throw new Error("Cost must be a non-negative number");
-  const costPence = Math.round(cost * 100);
-
-  if (status !== "for_sale" && status !== "sold") throw new Error("Invalid status");
-  if (location !== "centre_a" && location !== "centre_b") throw new Error("Invalid location");
-
   let imageKey: string | null = null;
   let thumbKey: string | null = null;
-
   if (image && image.size > 0) {
+    if (image.size > MAX_BYTES) return { error: "Image is too large (max 5 MB)." };
     const uploaded = await processAndUploadImage(image);
     imageKey = uploaded.imageKey;
     thumbKey = uploaded.thumbKey;
   }
 
   await db.insert(items).values({
-    description, condition, dimensions, pricePence, costPence,
-    status, location, listingUrl, imageKey, thumbKey,
+    description: v.description, condition: v.condition, dimensions: v.dimensions,
+    pricePence: v.pricePence, costPence: v.costPence,
+    status: v.status, location: v.location, listingUrl: v.listingUrl, imageKey, thumbKey,
   });
 
   revalidatePath("/inventory");
@@ -82,38 +125,26 @@ async function deleteImageObjects(imageKey: string | null, thumbKey: string | nu
   ));
 }
 
-export async function updateItem(id: number, formData: FormData): Promise<void> {
+export async function updateItem(id: number, prevState: FormState, formData: FormData): Promise<FormState> {
   const session = await getSession();
   if (!session) throw new Error("Unauthorised");
 
   const [existing] = await db.select().from(items).where(eq(items.id, id)).limit(1);
   if (!existing) throw new Error("Item not found");
 
-  const description = (formData.get("description") as string)?.trim();
-  const condition = (formData.get("condition") as string)?.trim() || null;
-  const dimensions = (formData.get("dimensions") as string)?.trim() || null;
-  const listingUrl = (formData.get("listingUrl") as string)?.trim() || null;
-  const status = formData.get("status") as string;
-  const location = formData.get("location") as string;
-  const image = formData.get("image") as File | null;
-
-  if (!description) throw new Error("Description is required");
-  const pounds = Number(formData.get("price"));
-  if (!Number.isFinite(pounds) || pounds < 0) throw new Error("Price must be a non-negative number");
-  const pricePence = Math.round(pounds * 100);
-  const cost = Number(formData.get("cost"));
-  if (!Number.isFinite(cost) || cost < 0) throw new Error("Cost must be a non-negative number");
-  const costPence = Math.round(cost * 100);
-  if (status !== "for_sale" && status !== "sold") throw new Error("Invalid status");
-  if (location !== "centre_a" && location !== "centre_b") throw new Error("Invalid location");
+  const parsed = parseItemForm(formData);
+  if (!parsed.ok) return { error: parsed.error };
+  const v = parsed.values;
 
   let soldAt = existing.soldAt;
-  if (status === "sold" && existing.status !== "sold") soldAt = new Date();
-  else if (status === "for_sale" && existing.status === "sold") soldAt = null;
+  if (v.status === "sold" && existing.status !== "sold") soldAt = new Date();
+  else if (v.status === "for_sale" && existing.status === "sold") soldAt = null;
 
+  const image = formData.get("image") as File | null;
   let imageKey = existing.imageKey;
   let thumbKey = existing.thumbKey;
   if (image && image.size > 0) {
+    if (image.size > MAX_BYTES) return { error: "Image is too large (max 5 MB)." };
     const uploaded = await processAndUploadImage(image);
     await deleteImageObjects(existing.imageKey, existing.thumbKey);
     imageKey = uploaded.imageKey;
@@ -121,8 +152,10 @@ export async function updateItem(id: number, formData: FormData): Promise<void> 
   }
 
   await db.update(items).set({
-    description, condition, dimensions, pricePence, costPence,
-    status, location, listingUrl, imageKey, thumbKey, soldAt, updatedAt: new Date(),
+    description: v.description, condition: v.condition, dimensions: v.dimensions,
+    pricePence: v.pricePence, costPence: v.costPence,
+    status: v.status, location: v.location, listingUrl: v.listingUrl,
+    imageKey, thumbKey, soldAt, updatedAt: new Date(),
   }).where(eq(items.id, id));
 
   revalidatePath("/inventory");

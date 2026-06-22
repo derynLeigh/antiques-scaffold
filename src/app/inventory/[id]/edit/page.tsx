@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { items } from "@/db/schema";
 import { updateItem, deleteItem } from "../../actions";
-import { ItemFormFields } from "../../ItemFormFields";
+import { ItemForm } from "../../ItemForm";
 import { DeleteButton } from "./DeleteButton";
 
 export default async function EditItemPage({ params }: { params: Promise<{ id: string }> }) {
@@ -24,15 +24,7 @@ export default async function EditItemPage({ params }: { params: Promise<{ id: s
       </Link>
       <h1 className="mt-4 text-2xl font-semibold tracking-tight text-ink">Edit item</h1>
 
-      <form action={updateWithId} className="mt-2">
-        <ItemFormFields item={item} />
-        <button
-          type="submit"
-          className="mt-6 rounded-lg bg-accent px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
-        >
-          Save changes
-        </button>
-      </form>
+      <ItemForm action={updateWithId} item={item} submitLabel="Save changes" />
 
       <form action={deleteWithId} className="mt-10 border-t border-line pt-6">
         <DeleteButton />
